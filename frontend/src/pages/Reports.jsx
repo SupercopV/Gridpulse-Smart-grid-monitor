@@ -30,7 +30,7 @@ const Reports = () => {
     setReportData(null);
 
     try {
-      // Fetch latest values to build mock aggregation report based on real data state
+      
       const [subsRes, alertsRes, historyRes] = await Promise.all([
         API.get("/substations"),
         API.get("/alerts"),
@@ -46,7 +46,7 @@ const Reports = () => {
       const resolvedAlerts = alertsRes.data.filter(a => a.status === "RESOLVED").length;
       const activeAlerts = totalAlerts - resolvedAlerts;
 
-      // Mock aggregated averages based on active grid state
+      
       const averages = {
         voltage: 231.4,
         current: 12.8,
@@ -87,7 +87,7 @@ const Reports = () => {
 
   return (
     <div className="space-y-6">
-      {/* Title */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="font-outfit text-3xl font-bold tracking-tight text-white">Grid Analytics Reports</h1>
@@ -95,7 +95,7 @@ const Reports = () => {
         </div>
       </div>
 
-      {/* Filter Options */}
+      {}
       <div className="glass-panel p-6 flex flex-wrap gap-5 items-end print:hidden">
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-400 block" htmlFor="report-range">Report Range</label>
@@ -151,10 +151,10 @@ const Reports = () => {
         </div>
       )}
 
-      {/* Generated Report Output Sheet */}
+      {}
       {reportData ? (
         <div className="glass-panel p-8 bg-cardBg border-cardBorder max-w-3xl mx-auto space-y-6 print:border-none print:bg-white print:text-black">
-          {/* Print Header */}
+          {}
           <div className="flex justify-between items-start border-b border-cardBorder/60 pb-5 print:border-slate-300">
             <div>
               <span className="text-xs font-extrabold text-brandBlue uppercase tracking-widest print:text-blue-600">
@@ -174,7 +174,7 @@ const Reports = () => {
             </div>
           </div>
 
-          {/* Core Analytics Metrics */}
+          {}
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider print:text-slate-800">
               Key Aggregated Metrics
@@ -200,9 +200,9 @@ const Reports = () => {
             </div>
           </div>
 
-          {/* Alerts & Maintenance Grid */}
+          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-cardBorder/40 print:border-slate-200">
-            {/* Alarm summary */}
+            {}
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 print:text-slate-700">
                 <ShieldAlert size={14} className="text-red-400" /> Outage Incidents
@@ -223,7 +223,7 @@ const Reports = () => {
               </ul>
             </div>
 
-            {/* Ingestion stats */}
+            {}
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 print:text-slate-700">
                 <Clock size={14} className="text-brandBlue" /> Ingestion Load
@@ -245,7 +245,7 @@ const Reports = () => {
             </div>
           </div>
 
-          {/* Maintenance Actions Taken */}
+          {}
           <div className="space-y-3 pt-4 border-t border-cardBorder/40 print:border-slate-200">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 print:text-slate-700">
               <CheckSquare size={14} className="text-brandBlue" /> Recent Maintenance Resolutions

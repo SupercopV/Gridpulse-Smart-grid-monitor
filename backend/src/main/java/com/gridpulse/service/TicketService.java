@@ -1,6 +1,8 @@
 package com.gridpulse.service;
 
+import com.gridpulse.config.NotificationWebSocketHandler;
 import com.gridpulse.entity.*;
+
 import com.gridpulse.exception.ResourceNotFoundException;
 import com.gridpulse.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +46,7 @@ public class TicketService {
             ticket.setStatus("OPEN");
         }
         
-        // Update substation status to FAULT if ticket created for it
+        
         updateSubstationStatus(ticket.getSubstationId(), "FAULT");
 
         return ticketRepository.save(ticket);
@@ -54,7 +56,7 @@ public class TicketService {
     public RepairTicket updateTicket(Long id, RepairTicket details) {
         RepairTicket ticket = getTicketById(id);
         
-        // Check status transition to handle technician allocation / completion
+        
         String oldStatus = ticket.getStatus();
         String newStatus = details.getStatus();
 
@@ -62,9 +64,9 @@ public class TicketService {
             ticket.setRepairNotes(details.getRepairNotes());
         }
 
-        // Technician Assignment
+        
         if (details.getTechnicianId() != null && !details.getTechnicianId().equals(ticket.getTechnicianId())) {
-            // Free old technician if existed
+            
             if (ticket.getTechnicianId() != null) {
                 releaseTechnician(ticket.getTechnicianId());
             }
@@ -75,13 +77,15 @@ public class TicketService {
             ticket.setTechnicianId(tech.getId());
             ticket.setTechnicianName(tech.getName());
             
-            // Assign to new tech
+            
             tech.setCurrentJobs(tech.getCurrentJobs() + 1);
             tech.setAvailability("ON_JOB");
             technicianRepository.save(tech);
 
             ticket.setStatus("ASSIGNED");
+            NotificationWebSocketHandler.broadcast("TICKET_ASSIGNED", "Ticket assigned to technician " + ticket.getTechnicianName(), ticket);
         }
+
 
         if (newStatus != null && !newStatus.equals(oldStatus)) {
             ticket.setStatus(newStatus);
@@ -89,16 +93,19 @@ public class TicketService {
             if ("IN_PROGRESS".equals(newStatus)) {
                 if (ticket.getTechnicianId() != null) {
                     updateSubstationStatus(ticket.getSubstationId(), "WARNING");
+                    NotificationWebSocketHandler.broadcast("TECHNICIAN_ACCEPTED", "Technician " + ticket.getTechnicianName() + " has started repair.", ticket);
                 }
             } else if ("COMPLETED".equals(newStatus)) {
                 ticket.setCompletedAt(LocalDateTime.now());
+                NotificationWebSocketHandler.broadcast("REPAIR_COMPLETED", "Repair completed successfully for " + ticket.getSubstationName(), ticket);
 
-                // Release assigned technician
+                
                 if (ticket.getTechnicianId() != null) {
                     releaseTechnician(ticket.getTechnicianId());
                 }
 
-                // 1. Add to Repair History
+
+                
                 RepairHistory history = RepairHistory.builder()
                         .substationId(ticket.getSubstationId())
                         .substationName(ticket.getSubstationName())
@@ -109,7 +116,7 @@ public class TicketService {
                         .build();
                 repairHistoryRepository.save(history);
 
-                // 2. Resolve related Alerts
+                
                 List<Alert> activeAlerts = alertRepository.findBySubstationIdOrderByTimestampDesc(ticket.getSubstationId());
                 for (Alert alert : activeAlerts) {
                     if ("ACTIVE".equals(alert.getStatus())) {
@@ -118,7 +125,7 @@ public class TicketService {
                     }
                 }
 
-                // 3. Mark Substation Healthy again
+                
                 updateSubstationStatus(ticket.getSubstationId(), "HEALTHY");
             }
         }
@@ -142,4 +149,83 @@ public class TicketService {
             substationRepository.save(sub);
         });
     }
+
+    public List<RepairTicket> getTicketsForTechnician(Long userId) {
+        Technician tech = technicianRepository.findByUserId(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Technician not found for user ID: " + userId));
+        return ticketRepository.findByTechnicianId(tech.getId());
+    }
+
+    @Transactional
+    public RepairTicket updateTicketWorkflow(Long ticketId, Long userId, String status, String notes) {
+        Technician tech = technicianRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Technician not found for user ID: " + userId));
+
+        RepairTicket ticket = getTicketById(ticketId);
+        
+        if (!tech.getId().equals(ticket.getTechnicianId())) {
+            throw new org.springframework.security.access.AccessDeniedException("You are not assigned to this repair ticket.");
+        }
+
+        String oldStatus = ticket.getStatus();
+        String newStatus = status.toUpperCase();
+        ticket.setStatus(newStatus);
+
+        if (notes != null) {
+            ticket.setRepairNotes(notes);
+        }
+
+        if ("ACCEPTED".equals(newStatus)) {
+            tech.setAvailability("BUSY");
+            technicianRepository.save(tech);
+            NotificationWebSocketHandler.broadcast("TECHNICIAN_ACCEPTED", "Technician " + tech.getName() + " accepted repair ticket for " + ticket.getSubstationName(), ticket);
+        } else if ("REJECTED".equals(newStatus)) {
+            tech.setCurrentJobs(Math.max(0, tech.getCurrentJobs() - 1));
+            tech.setAvailability("AVAILABLE");
+            technicianRepository.save(tech);
+
+            ticket.setStatus("OPEN");
+            ticket.setTechnicianId(null);
+            ticket.setTechnicianName(null);
+            ticket.setRepairNotes("Ticket rejected by " + tech.getName() + ". Reason: " + (notes != null ? notes : "None"));
+            NotificationWebSocketHandler.broadcast("TICKET_UPDATED", "Ticket rejected by technician " + tech.getName(), ticket);
+        } else if ("TRAVELLING".equals(newStatus)) {
+            NotificationWebSocketHandler.broadcast("TICKET_UPDATED", "Technician " + tech.getName() + " is travelling to " + ticket.getSubstationName(), ticket);
+        } else if ("ON_SITE".equals(newStatus)) {
+            NotificationWebSocketHandler.broadcast("TICKET_UPDATED", "Technician " + tech.getName() + " has arrived on site at " + ticket.getSubstationName(), ticket);
+        } else if ("IN_PROGRESS".equals(newStatus)) {
+            updateSubstationStatus(ticket.getSubstationId(), "WARNING");
+            NotificationWebSocketHandler.broadcast("TICKET_UPDATED", "Technician " + tech.getName() + " started repair on " + ticket.getSubstationName(), ticket);
+        } else if ("COMPLETED".equals(newStatus)) {
+            ticket.setCompletedAt(LocalDateTime.now());
+            
+            tech.setCurrentJobs(Math.max(0, tech.getCurrentJobs() - 1));
+            tech.setAvailability("AVAILABLE");
+            technicianRepository.save(tech);
+
+            RepairHistory history = RepairHistory.builder()
+                    .substationId(ticket.getSubstationId())
+                    .substationName(ticket.getSubstationName())
+                    .faultResolved(ticket.getProbableFault())
+                    .technicianName(ticket.getTechnicianName())
+                    .completedAt(LocalDateTime.now())
+                    .notes(ticket.getRepairNotes() != null ? ticket.getRepairNotes() : "Repair completed successfully.")
+                    .build();
+            repairHistoryRepository.save(history);
+
+            List<Alert> activeAlerts = alertRepository.findBySubstationIdOrderByTimestampDesc(ticket.getSubstationId());
+            for (Alert alert : activeAlerts) {
+                if ("ACTIVE".equals(alert.getStatus())) {
+                    alert.setStatus("RESOLVED");
+                    alertRepository.save(alert);
+                }
+            }
+
+            updateSubstationStatus(ticket.getSubstationId(), "HEALTHY");
+            NotificationWebSocketHandler.broadcast("REPAIR_COMPLETED", "Repair completed successfully for " + ticket.getSubstationName(), ticket);
+        }
+
+        return ticketRepository.save(ticket);
+    }
 }
+

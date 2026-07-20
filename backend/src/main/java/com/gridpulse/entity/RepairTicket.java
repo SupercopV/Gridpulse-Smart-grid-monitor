@@ -31,8 +31,12 @@ public class RepairTicket {
     @Column(columnDefinition = "TEXT")
     private String recommendedRepair;
 
+    @Column(columnDefinition = "TEXT")
+    private String rootCause;
+
+
     @Column(nullable = false)
-    private String priority; // LOW, MEDIUM, HIGH, CRITICAL
+    private String priority; 
 
     private Long technicianId;
     private String technicianName;
@@ -40,7 +44,7 @@ public class RepairTicket {
     private Integer etaHours;
 
     @Column(nullable = false)
-    private String status; // OPEN, ASSIGNED, IN_PROGRESS, COMPLETED
+    private String status; 
 
     @Column(columnDefinition = "TEXT")
     private String repairNotes;

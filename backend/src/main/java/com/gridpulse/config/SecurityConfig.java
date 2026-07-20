@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.Collections;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebSecurity
@@ -28,6 +29,9 @@ import java.util.Collections;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+
+    @Value("${gridpulse.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
 
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
@@ -64,9 +68,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                // Enable telemetry posting by simulator or unauthenticated calls for convenience
+                
                 .requestMatchers("/api/telemetry/**").permitAll()
-                .requestMatchers("/api/substations/**").permitAll() // permit list read/write
+                .requestMatchers("/api/substations/**").permitAll() 
                 .requestMatchers("/api/alerts/**").permitAll()
                 .requestMatchers("/api/tickets/**").permitAll()
                 .requestMatchers("/api/technicians/**").permitAll()
@@ -83,7 +87,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173")); // Vite frontend port
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(","))); 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
         configuration.setExposedHeaders(Collections.singletonList("Authorization"));

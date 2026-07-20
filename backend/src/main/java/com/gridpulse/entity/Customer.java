@@ -32,7 +32,7 @@ public class Customer {
     private String accountNumber;
 
     @Column(nullable = false)
-    private String status; // ACTIVE, INACTIVE
+    private String status; 
 
     private Double averageConsumptionKwh;
 }

@@ -22,7 +22,7 @@ public class AiFaultDiagnoser {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public DiagnosisDto diagnoseFault(Double voltage, Double current, Double temperature, Double frequency, List<String> repairHistory) {
-        // Fallback or validation if Groq Key is missing
+        
         if (groqApiKey == null || groqApiKey.trim().isEmpty() || groqApiKey.equals("${GROQ_API_KEY}")) {
             System.out.println("Groq API key not configured. Using local heuristic fault diagnosis.");
             return generateHeuristicDiagnosis(voltage, current, temperature, frequency, repairHistory);
@@ -31,7 +31,7 @@ public class AiFaultDiagnoser {
         try {
             System.out.println("Diagnosing fault using Groq AI (" + groqModel + ") via LangChain4j...");
             
-            // Build OpenAiChatModel pointing to Groq's endpoint
+            
             OpenAiChatModel chatModel = OpenAiChatModel.builder()
                     .apiKey(groqApiKey)
                     .baseUrl(groqUrl)
@@ -39,7 +39,7 @@ public class AiFaultDiagnoser {
                     .temperature(0.1)
                     .build();
 
-            // Prepare prompt
+            
             String systemInstructions = "You are an electrical grid engineer. Analyze telemetry and repair history to diagnose grid faults. Return response ONLY as JSON.";
             String userPrompt = String.format(
                     "Telemetry:\n" +
@@ -54,6 +54,7 @@ public class AiFaultDiagnoser {
                     "  \"probableFault\": \"detailed fault description\",\n" +
                     "  \"confidenceScore\": 0.0,\n" +
                     "  \"recommendedRepair\": \"clear recommendation steps\",\n" +
+                    "  \"rootCause\": \"underlying technical root cause\",\n" +
                     "  \"priority\": \"LOW\" or \"MEDIUM\" or \"HIGH\" or \"CRITICAL\",\n" +
                     "  \"etaHours\": 4,\n" +
                     "  \"technicianSpecialization\": \"Cable Repair\" or \"Transformer Specialist\" or \"Grid Automation\"\n" +
@@ -65,7 +66,7 @@ public class AiFaultDiagnoser {
             String response = chatModel.generate(userPrompt);
             System.out.println("AI Raw Response: " + response);
 
-            // Clean response string in case LLM wraps it in ```json ... ```
+            
             String cleanJson = response.trim();
             if (cleanJson.startsWith("```json")) {
                 cleanJson = cleanJson.substring(7);
@@ -87,15 +88,17 @@ public class AiFaultDiagnoser {
         String fault = "Normal Operation";
         double confidence = 99.0;
         String recommendation = "No repair required.";
+        String cause = "System running under normal electrical parameters.";
         String priority = "LOW";
         int eta = 0;
         String spec = "Grid Automation";
 
-        // Check anomaly parameters
+        
         if (temperature > 75.0) {
             fault = "Thermal Overload & Cooling Pump Seizure";
             confidence = 88.0;
             recommendation = "Inspect transformer cooling system, clean radiator fins, and replace coolant circulation pump.";
+            cause = "Cooling pump mechanical seizure and radiator dust accumulation causing core temperature surge.";
             priority = "CRITICAL";
             eta = 4;
             spec = "Transformer Specialist";
@@ -103,6 +106,7 @@ public class AiFaultDiagnoser {
             fault = "Feeder Cable Insulation Degradation (Voltage Sag)";
             confidence = 82.0;
             recommendation = "Conduct megger testing on primary distribution lines. Inspect terminal poles for sag or tracking.";
+            cause = "Dielectric breakdown in underground feeder cable insulation caused by moisture ingress.";
             priority = "HIGH";
             eta = 3;
             spec = "Cable Repair";
@@ -110,6 +114,7 @@ public class AiFaultDiagnoser {
             fault = "Distribution Overload & Short Circuit Threat";
             confidence = 85.0;
             recommendation = "Rebalance grid phases, investigate load surges from industrial sectors, and verify relay trip thresholds.";
+            cause = "Excessive consumer demand spike and load unbalance across phases exceeding safe current limits.";
             priority = "CRITICAL";
             eta = 2;
             spec = "Grid Automation";
@@ -117,18 +122,20 @@ public class AiFaultDiagnoser {
             fault = "Phase Frequency Synchronisation Error";
             confidence = 90.0;
             recommendation = "Re-calibrate phase sync circuits, adjust tap changer ratios, and inspect circuit breakers.";
+            cause = "Generator speed fluctuations and local transformer phase-locked loop (PLL) control loop drift.";
             priority = "MEDIUM";
             eta = 2;
             spec = "Grid Automation";
         }
 
-        // Adjust based on history context if any
+        
         if (!repairHistory.isEmpty()) {
             for (String hist : repairHistory) {
                 if (hist.toLowerCase().contains("transformer") && fault.contains("Transformer")) {
                     fault = "Recurrent Transformer Winding Degradation";
                     confidence = 95.0;
                     recommendation = "Full transformer replacement recommended. Winding insulation has failed repeatedly.";
+                    cause = "Repeated dielectric failure in core windings due to high persistent thermal stress.";
                     eta = 6;
                 }
             }
@@ -138,9 +145,11 @@ public class AiFaultDiagnoser {
                 .probableFault(fault)
                 .confidenceScore(confidence)
                 .recommendedRepair(recommendation)
+                .rootCause(cause)
                 .priority(priority)
                 .etaHours(eta)
                 .technicianSpecialization(spec)
                 .build();
     }
+
 }

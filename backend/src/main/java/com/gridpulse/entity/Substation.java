@@ -29,7 +29,7 @@ public class Substation {
     private Double longitude;
 
     @Column(nullable = false)
-    private String status; // HEALTHY, WARNING, FAULT
+    private String status; 
 
     private Double maxCapacityKw;
 

@@ -8,7 +8,7 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentCust, setCurrentCust] = useState(null); // null means adding new
+  const [currentCust, setCurrentCust] = useState(null); 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -43,11 +43,11 @@ const Customers = () => {
     e.preventDefault();
     try {
       if (currentCust) {
-        // Update
+        
         await API.put(`/customers/${currentCust.id}`, formData);
         setActionMsg("Customer account successfully updated.");
       } else {
-        // Add
+        
         await API.post("/customers", formData);
         setActionMsg("Customer account successfully created.");
       }
@@ -102,7 +102,7 @@ const Customers = () => {
 
   return (
     <div className="space-y-6">
-      {/* Title */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-outfit text-3xl font-bold tracking-tight text-white">Customers Account Database</h1>
@@ -122,7 +122,7 @@ const Customers = () => {
         </div>
       )}
 
-      {/* Customers Table */}
+      {}
       <div className="glass-panel p-6">
         {loading ? (
           <div className="text-center py-10 text-slate-500">Loading customer profiles...</div>
@@ -184,7 +184,7 @@ const Customers = () => {
         )}
       </div>
 
-      {/* CRUD Form Modal */}
+      {}
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-panel w-full max-w-md p-6 bg-cardBg shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">

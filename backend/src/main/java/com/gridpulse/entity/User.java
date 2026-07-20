@@ -26,8 +26,23 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String role; // ROLE_ADMIN, ROLE_OPERATOR, ROLE_TECHNICIAN
+    private String role; 
 
     @Column(nullable = false)
     private String fullName;
+
+    @Builder.Default
+    private boolean passwordChanged = false;
+
+    @Builder.Default
+    private boolean enabled = true;
+
+    @Builder.Default
+    private boolean accountLocked = false;
+
+    @Builder.Default
+    private int failedAttempts = 0;
+
+    @Builder.Default
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
 }

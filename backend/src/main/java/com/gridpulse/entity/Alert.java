@@ -29,10 +29,10 @@ public class Alert {
     private Double frequency;
 
     @Column(nullable = false)
-    private String severity; // WARNING, CRITICAL
+    private String severity; 
 
     @Column(nullable = false)
-    private String status; // ACTIVE, ACKNOWLEDGED, RESOLVED
+    private String status; 
 
     @Column(nullable = false)
     private LocalDateTime timestamp;

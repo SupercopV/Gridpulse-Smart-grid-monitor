@@ -11,7 +11,7 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${gridpulse.jwt.secret:9a67471a79b16bb185cfb52e399588b444747c32bf2542a1772f4e24cf8fef7f}")
+    @Value("${gridpulse.jwt.secret}")
     private String jwtSecret;
 
     @Value("${gridpulse.jwt.expiration-ms:86400000}")

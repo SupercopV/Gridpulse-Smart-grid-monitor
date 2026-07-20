@@ -22,7 +22,7 @@ public class Telemetry {
 
     private Double voltage;
     private Double current;
-    private Double power; // kW
+    private Double power; 
     private Double temperature;
     private Double frequency;
 

@@ -43,12 +43,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-    // Live update every 5 seconds
+    
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Compute stat counters
+  
   const totalGrids = substations.length;
   const healthyGrids = substations.filter(s => s.status === "HEALTHY").length;
   const warningGrids = substations.filter(s => s.status === "WARNING").length;
@@ -58,15 +58,15 @@ const Dashboard = () => {
   const openTicketsCount = tickets.filter(t => t.status !== "COMPLETED").length;
   const completedRepairsCount = history.length;
 
-  // Chart 1: Substation capacities
+  
   const capacityChartData = substations.map(s => ({
     name: s.name.replace(" Substation", "").replace(" Grid", ""),
     Capacity: s.maxCapacityKw,
     Health: s.status === "HEALTHY" ? 100 : s.status === "WARNING" ? 50 : 10,
   }));
 
-  // Chart 2: Repairs trend over time
-  // Aggregate repairs by month
+  
+  
   const repairChartData = [
     { month: "Jan", Repairs: 1 },
     { month: "Feb", Repairs: 2 },
@@ -96,7 +96,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* Upper Title Section */}
+      {}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-outfit text-3xl font-bold tracking-tight text-white">Smart Grid Operations</h1>
@@ -116,7 +116,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* KPI Cards Grid */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
         <MetricCard 
           title="Total Grids" 
@@ -161,9 +161,9 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Charts Grid */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Substation Max Capacities */}
+        {}
         <div className="glass-panel p-6">
           <h2 className="font-outfit text-lg font-semibold text-slate-200 mb-5">Substation Grid Capacities (kW)</h2>
           <div className="h-64">
@@ -181,7 +181,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Repair completions trend */}
+        {}
         <div className="glass-panel p-6">
           <h2 className="font-outfit text-lg font-semibold text-slate-200 mb-5">Monthly Repair Completions Trend</h2>
           <div className="h-64">
@@ -206,9 +206,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Grid Status Lists */}
+      {}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Stations Table */}
+        {}
         <div className="glass-panel p-6 xl:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-outfit text-lg font-semibold text-slate-200">Grid Substation Status</h2>
@@ -243,7 +243,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Live / Recent Alerts */}
+        {}
         <div className="glass-panel p-6 space-y-4">
           <h2 className="font-outfit text-lg font-semibold text-slate-200">Active Alert Log</h2>
           <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">

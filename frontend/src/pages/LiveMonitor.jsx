@@ -33,17 +33,17 @@ const LiveMonitor = () => {
     if (!selectedSubId) return;
 
     try {
-      // Fetch live telemetry (gets latest for all, find selected)
+      
       const liveRes = await API.get("/telemetry/live");
       const subLive = liveRes.data.find(t => t.substationId.toString() === selectedSubId);
       if (subLive) {
         setLiveData(subLive);
       }
 
-      // Fetch history for charts
+      
       const histRes = await API.get(`/telemetry/grid/${selectedSubId}`);
       
-      // Format timestamp for charts
+      
       const formattedHist = histRes.data.map(h => ({
         ...h,
         time: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -85,14 +85,14 @@ const LiveMonitor = () => {
 
   const selectedSub = substations.find(s => s.id.toString() === selectedSubId);
 
-  // Safeguard thresholds colors
+  
   const getVoltageColor = (v) => v < 170 ? "text-red-400" : v > 250 ? "text-amber-400" : "text-emerald-400";
   const getCurrentColor = (c) => c > 30 ? "text-red-400" : c > 20 ? "text-amber-400" : "text-emerald-400";
   const getTempColor = (t) => t > 75 ? "text-red-400" : t > 60 ? "text-amber-400" : "text-emerald-400";
 
   return (
     <div className="space-y-8">
-      {/* Title */}
+      {}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-outfit text-3xl font-bold tracking-tight text-white">Live Grid Telemetry</h1>
@@ -115,7 +115,7 @@ const LiveMonitor = () => {
 
       {selectedSub && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Node Summary */}
+          {}
           <div className="glass-panel p-6 lg:col-span-2 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <span className="text-xs text-slate-500 font-bold uppercase tracking-wider block">Grid Node Details</span>
@@ -134,7 +134,7 @@ const LiveMonitor = () => {
             </div>
           </div>
 
-          {/* Anomaly Simulation Control Panel */}
+          {}
           <div className="glass-panel p-6 border-dashed border-cardBorder">
             <h3 className="font-outfit text-sm font-bold text-slate-300 flex items-center gap-1.5 mb-3.5">
               <Sparkles size={16} className="text-brandAmber" />
@@ -216,10 +216,10 @@ const LiveMonitor = () => {
         </div>
       )}
 
-      {/* Telemetry Charts */}
+      {}
       {historyData.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Voltage & Current Waveform */}
+          {}
           <div className="glass-panel p-6 lg:col-span-2 space-y-4">
             <h3 className="font-outfit text-base font-semibold text-slate-200">Voltage & Current Historical Trend</h3>
             <div className="h-72">
@@ -238,7 +238,7 @@ const LiveMonitor = () => {
             </div>
           </div>
 
-          {/* Temperature Surge Chart */}
+          {}
           <div className="glass-panel p-6 space-y-4">
             <h3 className="font-outfit text-base font-semibold text-slate-200">Core Temperature Trend (°C)</h3>
             <div className="h-72">

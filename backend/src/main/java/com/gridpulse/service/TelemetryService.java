@@ -1,9 +1,11 @@
 package com.gridpulse.service;
 
+import com.gridpulse.config.NotificationWebSocketHandler;
 import com.gridpulse.ai.AiFaultDiagnoser;
 import com.gridpulse.dto.DiagnosisDto;
 import com.gridpulse.entity.*;
 import com.gridpulse.repository.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -49,10 +51,10 @@ public class TelemetryService {
             telemetry.setTimestamp(LocalDateTime.now());
         }
 
-        // 1. Save locally in MySQL
+        
         Telemetry savedLocal = telemetryRepository.save(telemetry);
 
-        // 2. Save in AWS DynamoDB if mock is disabled
+        
         if (!isMock && dynamoDbClient != null) {
             try {
                 Map<String, AttributeValue> item = new HashMap<>();
@@ -77,7 +79,7 @@ public class TelemetryService {
             }
         }
 
-        // 3. Process Anomaly Detection
+        
         checkAndProcessAnomalies(telemetry);
 
         return savedLocal;
@@ -94,14 +96,14 @@ public class TelemetryService {
 
         Long subId = telemetry.getSubstationId();
         
-        // Find Substation
+        
         Optional<Substation> substationOpt = substationRepository.findById(subId);
         if (substationOpt.isEmpty()) {
             return;
         }
         Substation substation = substationOpt.get();
 
-        // Check if there is already an active alert or ticket for this substation to prevent duplicate alerts
+        
         List<Alert> activeAlerts = alertRepository.findBySubstationIdOrderByTimestampDesc(subId)
                 .stream()
                 .filter(a -> "ACTIVE".equals(a.getStatus()))
@@ -113,7 +115,7 @@ public class TelemetryService {
                 .collect(Collectors.toList());
 
         if (!activeAlerts.isEmpty() || !activeTickets.isEmpty()) {
-            // Already tracking an issue for this substation, skip duplicate creation
+            
             return;
         }
 
@@ -121,7 +123,7 @@ public class TelemetryService {
         System.out.println(String.format("Voltage: %.1fV, Current: %.1fA, Temp: %.1f°C", 
                 telemetry.getVoltage(), telemetry.getCurrent(), telemetry.getTemperature()));
 
-        // Create Alert
+        
         String severity = (telemetry.getVoltage() < 120.0 || telemetry.getTemperature() > 85.0 || telemetry.getCurrent() > 40.0) 
                 ? "CRITICAL" : "WARNING";
 
@@ -142,21 +144,23 @@ public class TelemetryService {
                 .build();
 
         alertRepository.save(alert);
+        NotificationWebSocketHandler.broadcast("NEW_FAULT", "New anomaly alert raised on " + substation.getName(), alert);
 
-        // Update substation status
+        
         substation.setStatus("FAULT");
         substationRepository.save(substation);
 
-        // Run AI Diagnosis in separate thread or synchronously (synchronous for direct response/ticket creation)
+
+        
         try {
-            // Retrieve Substation Repair History
+            
             List<RepairHistory> historyList = repairHistoryRepository.findBySubstationIdOrderByCompletedAtDesc(subId);
             List<String> historyStrings = historyList.stream()
                     .map(h -> String.format("%s resolved by %s on %s. Notes: %s", 
                             h.getFaultResolved(), h.getTechnicianName(), h.getCompletedAt().toLocalDate(), h.getNotes()))
                     .collect(Collectors.toList());
 
-            // Get AI Diagnosis
+            
             DiagnosisDto diagnosis = aiFaultDiagnoser.diagnoseFault(
                     telemetry.getVoltage(), 
                     telemetry.getCurrent(), 
@@ -165,15 +169,14 @@ public class TelemetryService {
                     historyStrings
             );
 
-            System.out.println("AI Diagnosis generated: " + diagnosis);
-
-            // Create Automated Repair Ticket
+            
             RepairTicket ticket = RepairTicket.builder()
                     .substationId(subId)
                     .substationName(substation.getName())
                     .probableFault(diagnosis.getProbableFault())
                     .confidenceScore(diagnosis.getConfidenceScore())
                     .recommendedRepair(diagnosis.getRecommendedRepair())
+                    .rootCause(diagnosis.getRootCause())
                     .priority(diagnosis.getPriority())
                     .etaHours(diagnosis.getEtaHours())
                     .status("OPEN")
@@ -181,20 +184,19 @@ public class TelemetryService {
                     .repairNotes("AI Diagnostics Auto-Generated.")
                     .build();
 
-            // Auto-assign Technician if available
             String specialization = diagnosis.getTechnicianSpecialization();
             List<Technician> availableTechs = technicianRepository.findByAvailability("AVAILABLE");
             Technician assignedTech = null;
 
             for (Technician tech : availableTechs) {
-                // Check if technician has matching skills
+                
                 if (specialization != null && tech.getSkills().toLowerCase().contains(specialization.toLowerCase())) {
                     assignedTech = tech;
                     break;
                 }
             }
 
-            // Fallback: assign first available if no exact specialization match
+            
             if (assignedTech == null && !availableTechs.isEmpty()) {
                 assignedTech = availableTechs.get(0);
             }
@@ -204,7 +206,7 @@ public class TelemetryService {
                 ticket.setTechnicianName(assignedTech.getName());
                 ticket.setStatus("ASSIGNED");
 
-                // Update tech workload
+                
                 assignedTech.setCurrentJobs(assignedTech.getCurrentJobs() + 1);
                 assignedTech.setAvailability("ON_JOB");
                 technicianRepository.save(assignedTech);
@@ -213,7 +215,11 @@ public class TelemetryService {
             }
 
             ticketRepository.save(ticket);
+            NotificationWebSocketHandler.broadcast("TICKET_ASSIGNED", "Ticket auto-assigned to technician " + (ticket.getTechnicianName() != null ? ticket.getTechnicianName() : "Unassigned"), ticket);
             System.out.println("Automated Repair Ticket created successfully.");
+
+            System.out.println("AI Diagnosis generated: " + diagnosis);
+            NotificationWebSocketHandler.broadcast("AI_DIAGNOSIS_COMPLETED", "AI fault diagnosis completed for " + substation.getName(), diagnosis);
 
         } catch (Exception e) {
             System.err.println("Failed to execute AI diagnostics or create repair ticket: " + e.getMessage());

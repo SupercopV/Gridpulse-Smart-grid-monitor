@@ -9,7 +9,7 @@ const authService = {
         userId: response.data.userId,
         username: response.data.username,
         fullName: response.data.fullName,
-        role: response.data.role,
+        role: response.data.role.replace("ROLE_", "").replace("GRID_OPERATOR", "OPERATOR"),
       }));
     }
     return response.data;
@@ -35,7 +35,11 @@ const authService = {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
-        return JSON.parse(userStr);
+        const u = JSON.parse(userStr);
+        if (u && u.role) {
+          u.role = u.role.replace("ROLE_", "").replace("GRID_OPERATOR", "OPERATOR");
+        }
+        return u;
       } catch (e) {
         return null;
       }

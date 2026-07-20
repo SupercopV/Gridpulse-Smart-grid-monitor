@@ -23,7 +23,7 @@
 }
 
 
-/* Glassmorphism Styles */
+
 .glass-panel {
   @apply bg-cardBg/60 backdrop-blur-md border border-cardBorder/60 rounded-2xl shadow-xl transition-all duration-300;
 }
@@ -36,7 +36,7 @@
   @apply bg-slate-900/40 backdrop-blur-sm border border-slate-800/60 rounded-xl p-6 transition-all duration-300;
 }
 
-/* Glowing Pulsing Rings */
+
 .glow-green {
   box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
 }
@@ -60,7 +60,7 @@
   }
 }
 
-/* Custom Scrollbar */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -74,7 +74,7 @@
   @apply bg-slate-800 rounded-full hover:bg-slate-700;
 }
 
-/* Map Styling Overrides */
+
 .leaflet-container {
   width: 100%;
   height: 100%;

@@ -25,7 +25,7 @@ const AlertsPage = () => {
 
   useEffect(() => {
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 10000); // Poll every 10 seconds
+    const interval = setInterval(fetchAlerts, 10000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -55,7 +55,7 @@ const AlertsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Title */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-outfit text-3xl font-bold tracking-tight text-white">Active Grid Alerts</h1>
@@ -75,7 +75,7 @@ const AlertsPage = () => {
         </div>
       )}
 
-      {/* Filter panel */}
+      {}
       <div className="glass-panel p-4 flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase">
           <Filter size={14} /> Filters:
@@ -111,7 +111,7 @@ const AlertsPage = () => {
         </div>
       </div>
 
-      {/* Alerts Table */}
+      {}
       <div className="glass-panel p-6">
         {loading ? (
           <div className="text-center py-10 text-slate-500">Loading alerts logs...</div>

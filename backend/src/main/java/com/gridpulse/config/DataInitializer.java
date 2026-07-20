@@ -32,123 +32,194 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 1. Seed Users
+        
         if (userRepository.count() == 0) {
             User admin = User.builder()
                     .username("admin")
                     .email("admin@gridpulse.com")
-                    .password(passwordEncoder.encode("admin123"))
+                    .password(passwordEncoder.encode("Admin@123"))
                     .fullName("Systems Administrator")
-                    .role("ROLE_ADMIN")
+                    .role("ADMIN")
+                    .passwordChanged(true)
                     .build();
 
             User operator = User.builder()
                     .username("operator")
                     .email("operator@gridpulse.com")
-                    .password(passwordEncoder.encode("operator123"))
+                    .password(passwordEncoder.encode("Operator@123"))
                     .fullName("Grid Operator One")
-                    .role("ROLE_OPERATOR")
+                    .role("GRID_OPERATOR")
+                    .passwordChanged(true)
                     .build();
 
-            User tech = User.builder()
-                    .username("technician")
-                    .email("tech@gridpulse.com")
-                    .password(passwordEncoder.encode("technician123"))
-                    .fullName("Jane Smith (Technician)")
-                    .role("ROLE_TECHNICIAN")
+            User uTech1 = User.builder()
+                    .username("john_doe")
+                    .email("john@gridpulse.com")
+                    .password(passwordEncoder.encode("tempPassword123"))
+                    .fullName("John Doe")
+                    .role("TECHNICIAN")
+                    .passwordChanged(false)
                     .build();
 
-            userRepository.saveAll(Arrays.asList(admin, operator, tech));
-            System.out.println("Seeded default users: admin/admin123, operator/operator123, technician/technician123");
+            User uTech2 = User.builder()
+                    .username("jane_smith")
+                    .email("jane@gridpulse.com")
+                    .password(passwordEncoder.encode("tempPassword123"))
+                    .fullName("Jane Smith")
+                    .role("TECHNICIAN")
+                    .passwordChanged(false)
+                    .build();
+
+            User uTech3 = User.builder()
+                    .username("david_miller")
+                    .email("david@gridpulse.com")
+                    .password(passwordEncoder.encode("tempPassword123"))
+                    .fullName("David Miller")
+                    .role("TECHNICIAN")
+                    .passwordChanged(false)
+                    .build();
+
+            userRepository.saveAll(Arrays.asList(admin, operator, uTech1, uTech2, uTech3));
+            System.out.println("Seeded default users: admin/Admin@123, operator/Operator@123, technicians/tempPassword123");
         }
 
-        // 2. Seed Substations (with coordinates around Bangalore or any default city)
+
+        
         if (substationRepository.count() == 0) {
-            Substation subA = Substation.builder()
-                    .name("Metro Grid Substation A")
-                    .location("Central Business District, Sector 4")
-                    .latitude(12.9716)
-                    .longitude(77.5946)
-                    .status("HEALTHY")
-                    .maxCapacityKw(5000.0)
-                    .description("Serves commercial offices and transit systems.")
-                    .build();
+            class StateGridData {
+                String name;
+                String location;
+                double lat;
+                double lon;
+                double capacity;
+                String desc;
 
-            Substation subB = Substation.builder()
-                    .name("Industrial Hub Substation B")
-                    .location("Peenya Industrial Area Phase 2")
-                    .latitude(12.9800)
-                    .longitude(77.6000)
-                    .status("HEALTHY")
-                    .maxCapacityKw(12000.0)
-                    .description("Serves heavy manufacturing and logistics warehouses.")
-                    .build();
+                StateGridData(String name, String location, double lat, double lon, double capacity, String desc) {
+                    this.name = name;
+                    this.location = location;
+                    this.lat = lat;
+                    this.lon = lon;
+                    this.capacity = capacity;
+                    this.desc = desc;
+                }
+            }
 
-            Substation subC = Substation.builder()
-                    .name("Residential Hub Substation C")
-                    .location("Jayanagar Residential Block 5")
-                    .latitude(12.9650)
-                    .longitude(77.5850)
-                    .status("HEALTHY")
-                    .maxCapacityKw(3500.0)
-                    .description("Serves high-density housing developments and retail blocks.")
-                    .build();
+            java.util.List<StateGridData> states = Arrays.asList(
+                new StateGridData("Andhra Pradesh Grid", "Amaravati, Andhra Pradesh", 16.5062, 80.6480, 15000.0, "Serves South-Central grid region, farming districts, and maritime ports."),
+                new StateGridData("Arunachal Pradesh Grid", "Itanagar, Arunachal Pradesh", 27.0844, 93.6053, 5000.0, "Serves Eastern Himalayan borders, forest zones, and hydro stations."),
+                new StateGridData("Assam Grid", "Guwahati, Assam", 26.1445, 91.7362, 10000.0, "Serves North-East tea production, oil refineries, and river networks."),
+                new StateGridData("Bihar Grid", "Patna, Bihar", 25.5941, 85.1376, 12000.0, "Serves high-density agricultural belts, heritage sites, and river basins."),
+                new StateGridData("Chhattisgarh Grid", "Raipur, Chhattisgarh", 21.2514, 81.6296, 11000.0, "Serves major steel plants, mineral reserves, and power generation hubs."),
+                new StateGridData("Goa Grid", "Panaji, Goa", 15.4909, 73.8278, 6000.0, "Serves coastal tourism zones, iron ore mines, and shipping terminals."),
+                new StateGridData("Gujarat Grid", "Gandhinagar, Gujarat", 23.2156, 72.6369, 22000.0, "Serves solar parks, textile mills, chemical zones, and manufacturing."),
+                new StateGridData("Haryana Grid", "Gurugram, Haryana", 28.4595, 77.0266, 18000.0, "Serves industrial corridors, corporate IT parks, and automotive plants."),
+                new StateGridData("Himachal Pradesh Grid", "Shimla, Himachal Pradesh", 31.1048, 77.1734, 7000.0, "Serves mountain tourism, apple orchards, and hydroelectric basins."),
+                new StateGridData("Jharkhand Grid", "Ranchi, Jharkhand", 23.3441, 85.3096, 11000.0, "Serves heavy metal mines, steel manufacturing, and industrial cities."),
+                new StateGridData("Karnataka Grid", "Bengaluru, Karnataka", 12.9716, 77.5946, 20000.0, "Serves tech parks, space exploration, and heavy aviation sectors."),
+                new StateGridData("Kerala Grid", "Thiruvananthapuram, Kerala", 8.5241, 76.9366, 12000.0, "Serves coastal tourism, spices, marine processing, and digital grids."),
+                new StateGridData("Madhya Pradesh Grid", "Bhopal, Madhya Pradesh", 23.2599, 77.4126, 16000.0, "Serves central agricultural zones, forest grids, and textile belts."),
+                new StateGridData("Maharashtra Grid", "Mumbai, Maharashtra", 19.0760, 72.8777, 30000.0, "Serves financial districts, film studios, shipping, and heavy manufacturing."),
+                new StateGridData("Manipur Grid", "Imphal, Manipur", 24.8170, 93.9368, 4000.0, "Serves border trade pathways, farming, and ecological reserves."),
+                new StateGridData("Meghalaya Grid", "Shillong, Meghalaya", 25.5788, 91.8831, 4500.0, "Serves mining grids, tourism, and high-precipitation hydro setups."),
+                new StateGridData("Mizoram Grid", "Aizawl, Mizoram", 23.7307, 92.7173, 4000.0, "Serves border transit routes, bamboo farming, and solar installations."),
+                new StateGridData("Nagaland Grid", "Kohima, Nagaland", 25.6751, 94.1086, 4000.0, "Serves mountain farming, timber industries, and micro-grid setups."),
+                new StateGridData("Odisha Grid", "Bhubaneswar, Odisha", 20.2961, 85.8245, 14000.0, "Serves iron & steel plants, space test centers, and coastal ports."),
+                new StateGridData("Punjab Grid", "Amritsar, Punjab", 31.6340, 74.8723, 15000.0, "Serves massive food grain hubs, textiles, and border trade networks."),
+                new StateGridData("Rajasthan Grid", "Jaipur, Rajasthan", 26.9124, 75.7873, 17000.0, "Serves solar setups, marble mines, tourism, and desert border grids."),
+                new StateGridData("Sikkim Grid", "Gangtok, Sikkim", 27.3389, 88.6065, 5000.0, "Serves organic farming hubs, tourism, and mountain hydro stations."),
+                new StateGridData("Tamil Nadu Grid", "Chennai, Tamil Nadu", 13.0827, 80.2707, 24000.0, "Serves automotive manufacturing, software corridors, and shipping hubs."),
+                new StateGridData("Telangana Grid", "Hyderabad, Telangana", 17.3850, 78.4867, 20000.0, "Serves biotechnology parks, software campuses, and pharmaceutical hubs."),
+                new StateGridData("Tripura Grid", "Agartala, Tripura", 23.8315, 91.2868, 5000.0, "Serves natural gas grids, rubber processing, and border channels."),
+                new StateGridData("Uttar Pradesh Grid", "Lucknow, Uttar Pradesh", 26.8467, 80.9462, 28000.0, "Serves high-density cities, sugar mills, and major heritage networks."),
+                new StateGridData("Uttarakhand Grid", "Dehradun, Uttarakhand", 30.3165, 78.0322, 9000.0, "Serves hydro grids, mountain tourism, and industrial estates."),
+                new StateGridData("West Bengal Grid", "Kolkata, West Bengal", 22.5726, 88.3639, 18000.0, "Serves eastern ports, coal mining borders, and heavy steel plants.")
+            );
 
-            Substation subD = Substation.builder()
-                    .name("Downtown Commercial Substation D")
-                    .location("Indiranagar 100 Feet Rd")
-                    .latitude(12.9900)
-                    .longitude(77.5900)
-                    .status("HEALTHY")
-                    .maxCapacityKw(7500.0)
-                    .description("Serves shopping centers, hospitals, and entertainment zones.")
-                    .build();
+            java.util.List<Substation> substations = new java.util.ArrayList<>();
+            for (StateGridData s : states) {
+                substations.add(Substation.builder()
+                        .name(s.name)
+                        .location(s.location)
+                        .latitude(s.lat)
+                        .longitude(s.lon)
+                        .status("HEALTHY")
+                        .maxCapacityKw(s.capacity)
+                        .description(s.desc)
+                        .build());
+            }
 
-            Substation subE = Substation.builder()
-                    .name("West Grid Substation E")
-                    .location("Whitefield IT Park Lane 2")
-                    .latitude(12.9550)
-                    .longitude(77.6100)
-                    .status("HEALTHY")
-                    .maxCapacityKw(10000.0)
-                    .description("Serves large corporate campuses and server hosting hubs.")
-                    .build();
-
-            substationRepository.saveAll(Arrays.asList(subA, subB, subC, subD, subE));
-            System.out.println("Seeded 5 grid substations.");
+            substationRepository.saveAll(substations);
+            System.out.println("Seeded all 28 Indian state grid substations successfully.");
         }
 
-        // 3. Seed Technicians
+
+        
         if (technicianRepository.count() == 0) {
+            User uTech1 = userRepository.findByUsername("john_doe").orElse(null);
+            User uTech2 = userRepository.findByUsername("jane_smith").orElse(null);
+            User uTech3 = userRepository.findByUsername("david_miller").orElse(null);
+
+            if (uTech1 == null) {
+                uTech1 = userRepository.save(User.builder().username("john_doe").email("john@gridpulse.com").password(passwordEncoder.encode("tempPassword123")).fullName("John Doe").role("TECHNICIAN").passwordChanged(false).build());
+            }
+            if (uTech2 == null) {
+                uTech2 = userRepository.save(User.builder().username("jane_smith").email("jane@gridpulse.com").password(passwordEncoder.encode("tempPassword123")).fullName("Jane Smith").role("TECHNICIAN").passwordChanged(false).build());
+            }
+            if (uTech3 == null) {
+                uTech3 = userRepository.save(User.builder().username("david_miller").email("david@gridpulse.com").password(passwordEncoder.encode("tempPassword123")).fullName("David Miller").role("TECHNICIAN").passwordChanged(false).build());
+            }
+
             Technician tech1 = Technician.builder()
-                    .name("John Doe")
-                    .skills("Transformer Maintenance, Substation Automation")
-                    .availability("AVAILABLE")
-                    .currentJobs(0)
+                    .user(uTech1)
+                    .employeeId("TECH-001")
+                    .fullName("John Doe")
                     .phone("+91-9876543210")
+                    .specialization("Transformer Maintenance, Substation Automation")
+                    .availability("AVAILABLE")
+                    .experience(5)
+                    .rating(4.8)
+                    .currentJobs(0)
+                    .currentLatitude(12.9716)
+                    .currentLongitude(77.5946)
+                    .status("Active")
                     .build();
 
             Technician tech2 = Technician.builder()
-                    .name("Jane Smith")
-                    .skills("Cable Repair, High Voltage Breakers")
-                    .availability("AVAILABLE")
-                    .currentJobs(0)
+                    .user(uTech2)
+                    .employeeId("TECH-002")
+                    .fullName("Jane Smith")
                     .phone("+91-8765432109")
+                    .specialization("Cable Repair, High Voltage Breakers")
+                    .availability("AVAILABLE")
+                    .experience(7)
+                    .rating(4.9)
+                    .currentJobs(0)
+                    .currentLatitude(13.0827)
+                    .currentLongitude(80.2707)
+                    .status("Active")
                     .build();
 
             Technician tech3 = Technician.builder()
-                    .name("David Miller")
-                    .skills("Grid Protection Systems, Telecom Diagnostics")
-                    .availability("AVAILABLE")
-                    .currentJobs(0)
+                    .user(uTech3)
+                    .employeeId("TECH-003")
+                    .fullName("David Miller")
                     .phone("+91-7654321098")
+                    .specialization("Grid Protection Systems, Telecom Diagnostics")
+                    .availability("AVAILABLE")
+                    .experience(4)
+                    .rating(4.7)
+                    .currentJobs(0)
+                    .currentLatitude(17.3850)
+                    .currentLongitude(78.4867)
+                    .status("Active")
                     .build();
 
             technicianRepository.saveAll(Arrays.asList(tech1, tech2, tech3));
-            System.out.println("Seeded 3 technicians.");
+            System.out.println("Seeded 3 technicians linked to individual accounts.");
         }
 
-        // 4. Seed Customers
+
+        
         if (customerRepository.count() == 0) {
             Customer cust1 = Customer.builder()
                     .name("Alice Johnson")
@@ -184,7 +255,7 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Seeded default customers.");
         }
 
-        // 5. Seed Repair History for AI Context
+        
         if (repairHistoryRepository.count() == 0) {
             RepairHistory hist1 = RepairHistory.builder()
                     .substationId(1L)

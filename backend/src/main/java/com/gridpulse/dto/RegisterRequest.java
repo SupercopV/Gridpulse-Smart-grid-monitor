@@ -21,7 +21,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Role is required")
-    private String role; // ADMIN, OPERATOR, TECHNICIAN
+    private String role; 
 
     @NotBlank(message = "Full name is required")
     private String fullName;

@@ -3,17 +3,17 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import authService from "../services/authService";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Login from "../pages/Login";
-import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import LiveMonitor from "../pages/LiveMonitor";
 import GridHeatmap from "../pages/GridHeatmap";
 import AlertsPage from "../pages/AlertsPage";
 import RepairTickets from "../pages/RepairTickets";
-import Technicians from "../pages/Technicians";
+import TechnicianManagement from "../pages/TechnicianManagement";
 import Customers from "../pages/Customers";
 import Reports from "../pages/Reports";
+import TechnicianDashboard from "../pages/TechnicianDashboard";
 
-// Helper components for guarding routes
+
 const ProtectedRoute = ({ children }) => {
   const isAuth = authService.isAuthenticated();
   return isAuth ? children : <Navigate to="/login" replace />;
@@ -27,14 +27,22 @@ const RoleRoute = ({ children, allowedRoles }) => {
   return hasAccess ? children : <Navigate to="/" replace />;
 };
 
+const DashboardRedirect = () => {
+  const user = authService.getCurrentUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === "ROLE_TECHNICIAN" || user.role === "TECHNICIAN") {
+    return <Navigate to="/tech-dashboard" replace />;
+  }
+  return <Dashboard />;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Auth Routes */}
+      {}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
 
-      {/* Protected Dashboard Routes */}
+      {}
       <Route
         path="/"
         element={
@@ -43,11 +51,19 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<DashboardRedirect />} />
+        <Route 
+          path="tech-dashboard" 
+          element={
+            <RoleRoute allowedRoles={["ADMIN", "TECHNICIAN", "ROLE_TECHNICIAN"]}>
+              <TechnicianDashboard />
+            </RoleRoute>
+          } 
+        />
         <Route path="monitoring" element={<LiveMonitor />} />
         <Route path="heatmap" element={<GridHeatmap />} />
         
-        {/* Alerts Page - accessible by Admin and Operator */}
+        {}
         <Route 
           path="alerts" 
           element={
@@ -57,20 +73,20 @@ const AppRoutes = () => {
           } 
         />
 
-        {/* Repair Tickets - accessible by all but different actions (Admin manages, Operator requests, Tech completes) */}
+        {}
         <Route path="tickets" element={<RepairTickets />} />
 
-        {/* Technicians CRUD - Admin only */}
+        {}
         <Route 
           path="technicians" 
           element={
             <RoleRoute allowedRoles={["ADMIN"]}>
-              <Technicians />
+              <TechnicianManagement />
             </RoleRoute>
           } 
         />
 
-        {/* Customers CRUD - Admin / Operator */}
+        {}
         <Route 
           path="customers" 
           element={
@@ -80,7 +96,7 @@ const AppRoutes = () => {
           } 
         />
 
-        {/* Reports - Admin / Operator */}
+        {}
         <Route 
           path="reports" 
           element={
@@ -91,7 +107,7 @@ const AppRoutes = () => {
         />
       </Route>
 
-      {/* Fallback */}
+      {}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

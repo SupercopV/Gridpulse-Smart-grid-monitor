@@ -18,7 +18,7 @@ public class DynamoDbConfig {
     @Bean
     public DynamoDbClient dynamoDbClient() {
         if (isMock) {
-            // Return null or dummy when mock is enabled
+            
             return null;
         }
         try {
@@ -26,7 +26,7 @@ public class DynamoDbConfig {
                     .region(Region.of(region))
                     .build();
         } catch (Exception e) {
-            // Log warning and return null to prevent application startup failure if AWS is configured but unreachable
+            
             System.err.println("Failed to initialize AWS DynamoDbClient: " + e.getMessage() + ". Defaulting to local repository mode.");
             return null;
         }

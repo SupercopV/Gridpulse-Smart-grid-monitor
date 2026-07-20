@@ -16,17 +16,55 @@ public class Technician {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
+
+    @Column(unique = true, nullable = false)
+    private String employeeId;
 
     @Column(nullable = false)
-    private String skills; // e.g. "Transformer Maintenance", "Substation Automation", "Overhead Cables"
+    private String fullName;
+
+    private String phone;
+    private String email;
 
     @Column(nullable = false)
-    private String availability; // AVAILABLE, ON_JOB, OFF_DUTY
+    private String specialization; 
+
+    private Integer experience;
+
+    @Builder.Default
+    private Double rating = 5.0;
+
+    @Column(nullable = false)
+    private String availability; 
+
+    private Double currentLatitude;
+    private Double currentLongitude;
+
+    private String status;
+
+    private String skillCategory;
+    private String address;
 
     @Builder.Default
     private Integer currentJobs = 0;
 
-    private String phone;
+    
+    public String getName() {
+        return fullName;
+    }
+
+    public void setName(String name) {
+        this.fullName = name;
+    }
+
+    public String getSkills() {
+        return specialization;
+    }
+
+    public void setSkills(String skills) {
+        this.specialization = skills;
+    }
 }
