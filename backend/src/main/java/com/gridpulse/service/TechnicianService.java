@@ -70,7 +70,7 @@ public class TechnicianService {
     }
 
     private String generateUniqueUsername() {
-        java.util.Random rand = new java.util.Random();
+        java.security.SecureRandom rand = new java.security.SecureRandom();
         while (true) {
             String username = "tech" + (1000 + rand.nextInt(9000));
             if (!userRepository.existsByUsername(username)) {

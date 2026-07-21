@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Component
 public class TelemetryScheduler {
@@ -20,7 +20,7 @@ public class TelemetryScheduler {
     @Autowired
     private TelemetryService telemetryService;
 
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
 
     
     private final java.util.concurrent.ConcurrentHashMap<Long, String> forcedAnomalies = new java.util.concurrent.ConcurrentHashMap<>();

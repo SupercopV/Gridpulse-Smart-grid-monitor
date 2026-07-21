@@ -36,7 +36,7 @@ public class SubstationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteSubstation(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSubstation(@PathVariable Long id) {
         substationService.deleteSubstation(id);
         return ResponseEntity.ok().build();
     }

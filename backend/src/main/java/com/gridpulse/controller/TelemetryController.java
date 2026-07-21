@@ -37,7 +37,7 @@ public class TelemetryController {
     }
 
     @PostMapping("/simulate-anomaly/{substationId}")
-    public ResponseEntity<?> simulateAnomaly(
+    public ResponseEntity<Map<String, Object>> simulateAnomaly(
             @PathVariable Long substationId,
             @RequestParam(defaultValue = "VOLTAGE_SAG") String type) {
         telemetryScheduler.forceAnomaly(substationId, type.toUpperCase());

@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
 public class AuthController {
+
+    private static final SecureRandom secureRandom = new SecureRandom();
+    private static final String KEY_MESSAGE = "message";
+    private static final String KEY_EMAIL = "email";
+    private static final String KEY_SUCCESS = "success";
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -42,15 +48,14 @@ public class AuthController {
     @Autowired
     private EmailNotificationService notificationService;
 
-    
-    private static final Map<String, OtpDetails> otpStorage = new ConcurrentHashMap<>();
+    private final Map<String, OtpDetails> otpStorage = new ConcurrentHashMap<>();
 
     private static class OtpDetails {
         String otp;
         LocalDateTime expiry;
         OtpDetails(String otp) {
             this.otp = otp;
-            this.expiry = LocalDateTime.now().plusMinutes(5); 
+            this.expiry = LocalDateTime.now().plusMinutes(5);
         }
         boolean isExpired() {
             return LocalDateTime.now().isAfter(expiry);
@@ -58,17 +63,17 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Object> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         String username = loginRequest.getUsername();
         Optional<User> userOpt = userRepository.findByUsername(username);
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (user.isAccountLocked()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Account is locked due to 5 failed login attempts. Please contact Administrator."));
+                return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Account is locked due to 5 failed login attempts. Please contact Administrator."));
             }
             if (!user.isEnabled()) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Account is disabled. Please contact Administrator."));
+                return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Account is disabled. Please contact Administrator."));
             }
         }
 
@@ -84,7 +89,6 @@ public class AuthController {
             String jwt = tokenProvider.generateToken(authentication);
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-            
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 if (user.getFailedAttempts() > 0) {
@@ -102,7 +106,6 @@ public class AuthController {
                     .role(userPrincipal.getUser().getRole().replace("ROLE_", ""))
                     .build());
         } catch (Exception e) {
-            
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 user.setFailedAttempts(user.getFailedAttempts() + 1);
@@ -112,7 +115,7 @@ public class AuthController {
                 userRepository.save(user);
 
                 if (user.isAccountLocked()) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "Account is locked due to 5 failed login attempts. Please contact Administrator."));
+                    return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Account is locked due to 5 failed login attempts. Please contact Administrator."));
                 }
             }
             throw new InvalidCredentialsException("Invalid username or password");
@@ -120,75 +123,70 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
+    public ResponseEntity<Object> forgotPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get(KEY_EMAIL);
         if (email == null || email.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Email is required"));
         }
 
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "No account registered with this email address"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "No account registered with this email address"));
         }
 
         User user = userOpt.get();
-        
-        String otp = String.format("%06d", new Random().nextInt(900000) + 100000);
+        String otp = String.format("%06d", secureRandom.nextInt(900000) + 100000);
         otpStorage.put(email, new OtpDetails(otp));
 
-        
         notificationService.sendOtp(email, user.getFullName(), otp);
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "OTP verification code sent to your registered email."));
+        return ResponseEntity.ok(Map.of(KEY_SUCCESS, true, KEY_MESSAGE, "OTP verification code sent to your registered email."));
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
+    public ResponseEntity<Object> verifyOtp(@RequestBody Map<String, String> payload) {
+        String email = payload.get(KEY_EMAIL);
         String otp = payload.get("otp");
 
         if (email == null || otp == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email and OTP code are required"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Email and OTP code are required"));
         }
 
         OtpDetails details = otpStorage.get(email);
         if (details == null || details.isExpired() || !details.otp.equals(otp)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired OTP verification code"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Invalid or expired OTP verification code"));
         }
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "OTP verified successfully."));
+        return ResponseEntity.ok(Map.of(KEY_SUCCESS, true, KEY_MESSAGE, "OTP verified successfully."));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
+    public ResponseEntity<Object> resetPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get(KEY_EMAIL);
         String otp = payload.get("otp");
         String password = payload.get("password");
 
         if (email == null || otp == null || password == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "All parameters are required"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "All parameters are required"));
         }
 
         OtpDetails details = otpStorage.get(email);
         if (details == null || details.isExpired() || !details.otp.equals(otp)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired OTP verification code"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "Invalid or expired OTP verification code"));
         }
 
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "User account not found"));
+            return ResponseEntity.badRequest().body(Map.of(KEY_MESSAGE, "User account not found"));
         }
 
         User user = userOpt.get();
         user.setPassword(passwordEncoder.encode(password));
-        user.setFailedAttempts(0);
-        user.setAccountLocked(false);
         user.setPasswordChanged(true);
         userRepository.save(user);
 
-        
         otpStorage.remove(email);
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "Your password has been successfully reset."));
+        return ResponseEntity.ok(Map.of(KEY_SUCCESS, true, KEY_MESSAGE, "Password has been reset successfully. Please login with your new password."));
     }
 }

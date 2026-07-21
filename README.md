@@ -181,16 +181,12 @@ The generated file `GridPulse.war` will be created inside `backend/target/`.
 ### Deployment to Apache Tomcat 10 (AWS EC2)
 
 1. Copy `GridPulse.war` to Tomcat's `webapps/` directory on your EC2 instance.
-2. Configure Tomcat environment variables in `/opt/tomcat10/bin/setenv.sh`:
+2. Copy the deployment template from `deployment/tomcat/setenv.sh` into Tomcat's `bin/setenv.sh`:
    ```bash
-   export JAVA_OPTS="-Dspring.profiles.active=prod -Djava.awt.headless=true"
-   export SPRING_DATASOURCE_URL="jdbc:mysql://<YOUR-RDS-ENDPOINT>:3306/gridpulse?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC"
-   export SPRING_DATASOURCE_USERNAME="root"
-   export SPRING_DATASOURCE_PASSWORD="YOUR_RDS_PASSWORD"
-   export JWT_SECRET="YOUR_SECURE_JWT_SECRET_KEY"
-   export GROQ_API_KEY="YOUR_GROQ_API_KEY"
-   export CORS_ALLOWED_ORIGINS="http://<YOUR-EC2-IP>:8080"
+   cp deployment/tomcat/setenv.sh /opt/tomcat/bin/setenv.sh
+   chmod +x /opt/tomcat/bin/setenv.sh
    ```
+   *(Ensure `GROQ_API_KEY` and database credentials are properly set in `setenv.sh`)*
 3. Start Tomcat:
    ```bash
    sudo /opt/tomcat10/bin/startup.sh

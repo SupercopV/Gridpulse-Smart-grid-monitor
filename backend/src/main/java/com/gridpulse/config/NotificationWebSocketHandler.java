@@ -10,8 +10,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class NotificationWebSocketHandler extends TextWebSocketHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(NotificationWebSocketHandler.class);
     private static final CopyOnWriteArraySet<WebSocketSession> sessions = new CopyOnWriteArraySet<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
     static {
@@ -21,13 +25,13 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessions.add(session);
-        System.out.println("WebSocket Connection established. Session ID: " + session.getId());
+        log.info("WebSocket Connection established. Session ID: {}", session.getId());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         sessions.remove(session);
-        System.out.println("WebSocket Connection closed. Session ID: " + session.getId());
+        log.info("WebSocket Connection closed. Session ID: {}", session.getId());
     }
 
     public static void broadcast(String type, String message, Object data) {

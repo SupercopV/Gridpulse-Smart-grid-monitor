@@ -121,7 +121,7 @@ public class TechnicianController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ADMIN')")
-    public ResponseEntity<?> deleteTechnician(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTechnician(@PathVariable Long id) {
         technicianService.deleteTechnician(id);
         return ResponseEntity.ok().build();
     }

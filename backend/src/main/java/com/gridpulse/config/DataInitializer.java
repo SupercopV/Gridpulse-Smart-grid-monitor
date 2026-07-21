@@ -2,6 +2,8 @@ package com.gridpulse.config;
 
 import com.gridpulse.entity.*;
 import com.gridpulse.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,6 +13,19 @@ import java.util.Arrays;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final String JOHN_DOE = "john_doe";
+    private static final String JANE_SMITH = "jane_smith";
+    private static final String DAVID_MILLER = "david_miller";
+    private static final String NAME_JOHN_DOE = "John Doe";
+    private static final String NAME_JANE_SMITH = "Jane Smith";
+    private static final String NAME_DAVID_MILLER = "David Miller";
+    private static final String TEMP_PASSWORD = "tempPassword123";
+    private static final String ROLE_TECHNICIAN = "TECHNICIAN";
+    private static final String STATUS_AVAILABLE = "AVAILABLE";
+    private static final String STATUS_ACTIVE = "Active";
+    private static final String STATUS_UPPER_ACTIVE = "ACTIVE";
 
     @Autowired
     private UserRepository userRepository;
@@ -53,34 +68,34 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             User uTech1 = User.builder()
-                    .username("john_doe")
+                    .username(JOHN_DOE)
                     .email("john@gridpulse.com")
-                    .password(passwordEncoder.encode("tempPassword123"))
-                    .fullName("John Doe")
-                    .role("TECHNICIAN")
+                    .password(passwordEncoder.encode(TEMP_PASSWORD))
+                    .fullName(NAME_JOHN_DOE)
+                    .role(ROLE_TECHNICIAN)
                     .passwordChanged(false)
                     .build();
 
             User uTech2 = User.builder()
-                    .username("jane_smith")
+                    .username(JANE_SMITH)
                     .email("jane@gridpulse.com")
-                    .password(passwordEncoder.encode("tempPassword123"))
-                    .fullName("Jane Smith")
-                    .role("TECHNICIAN")
+                    .password(passwordEncoder.encode(TEMP_PASSWORD))
+                    .fullName(NAME_JANE_SMITH)
+                    .role(ROLE_TECHNICIAN)
                     .passwordChanged(false)
                     .build();
 
             User uTech3 = User.builder()
-                    .username("david_miller")
+                    .username(DAVID_MILLER)
                     .email("david@gridpulse.com")
-                    .password(passwordEncoder.encode("tempPassword123"))
-                    .fullName("David Miller")
-                    .role("TECHNICIAN")
+                    .password(passwordEncoder.encode(TEMP_PASSWORD))
+                    .fullName(NAME_DAVID_MILLER)
+                    .role(ROLE_TECHNICIAN)
                     .passwordChanged(false)
                     .build();
 
             userRepository.saveAll(Arrays.asList(admin, operator, uTech1, uTech2, uTech3));
-            System.out.println("Seeded default users: admin/Admin@123, operator/Operator@123, technicians/tempPassword123");
+            log.info("Seeded default users: admin/Admin@123, operator/Operator@123, technicians/tempPassword123");
         }
 
 
@@ -149,73 +164,73 @@ public class DataInitializer implements CommandLineRunner {
             }
 
             substationRepository.saveAll(substations);
-            System.out.println("Seeded all 28 Indian state grid substations successfully.");
+            log.info("Seeded all 28 Indian state grid substations successfully.");
         }
 
 
         
         if (technicianRepository.count() == 0) {
-            User uTech1 = userRepository.findByUsername("john_doe").orElse(null);
-            User uTech2 = userRepository.findByUsername("jane_smith").orElse(null);
-            User uTech3 = userRepository.findByUsername("david_miller").orElse(null);
+            User uTech1 = userRepository.findByUsername(JOHN_DOE).orElse(null);
+            User uTech2 = userRepository.findByUsername(JANE_SMITH).orElse(null);
+            User uTech3 = userRepository.findByUsername(DAVID_MILLER).orElse(null);
 
             if (uTech1 == null) {
-                uTech1 = userRepository.save(User.builder().username("john_doe").email("john@gridpulse.com").password(passwordEncoder.encode("tempPassword123")).fullName("John Doe").role("TECHNICIAN").passwordChanged(false).build());
+                uTech1 = userRepository.save(User.builder().username(JOHN_DOE).email("john@gridpulse.com").password(passwordEncoder.encode(TEMP_PASSWORD)).fullName(NAME_JOHN_DOE).role(ROLE_TECHNICIAN).passwordChanged(false).build());
             }
             if (uTech2 == null) {
-                uTech2 = userRepository.save(User.builder().username("jane_smith").email("jane@gridpulse.com").password(passwordEncoder.encode("tempPassword123")).fullName("Jane Smith").role("TECHNICIAN").passwordChanged(false).build());
+                uTech2 = userRepository.save(User.builder().username(JANE_SMITH).email("jane@gridpulse.com").password(passwordEncoder.encode(TEMP_PASSWORD)).fullName(NAME_JANE_SMITH).role(ROLE_TECHNICIAN).passwordChanged(false).build());
             }
             if (uTech3 == null) {
-                uTech3 = userRepository.save(User.builder().username("david_miller").email("david@gridpulse.com").password(passwordEncoder.encode("tempPassword123")).fullName("David Miller").role("TECHNICIAN").passwordChanged(false).build());
+                uTech3 = userRepository.save(User.builder().username(DAVID_MILLER).email("david@gridpulse.com").password(passwordEncoder.encode(TEMP_PASSWORD)).fullName(NAME_DAVID_MILLER).role(ROLE_TECHNICIAN).passwordChanged(false).build());
             }
 
             Technician tech1 = Technician.builder()
                     .user(uTech1)
                     .employeeId("TECH-001")
-                    .fullName("John Doe")
+                    .fullName(NAME_JOHN_DOE)
                     .phone("+91-9876543210")
                     .specialization("Transformer Maintenance, Substation Automation")
-                    .availability("AVAILABLE")
+                    .availability(STATUS_AVAILABLE)
                     .experience(5)
                     .rating(4.8)
                     .currentJobs(0)
                     .currentLatitude(12.9716)
                     .currentLongitude(77.5946)
-                    .status("Active")
+                    .status(STATUS_ACTIVE)
                     .build();
 
             Technician tech2 = Technician.builder()
                     .user(uTech2)
                     .employeeId("TECH-002")
-                    .fullName("Jane Smith")
+                    .fullName(NAME_JANE_SMITH)
                     .phone("+91-8765432109")
                     .specialization("Cable Repair, High Voltage Breakers")
-                    .availability("AVAILABLE")
+                    .availability(STATUS_AVAILABLE)
                     .experience(7)
                     .rating(4.9)
                     .currentJobs(0)
                     .currentLatitude(13.0827)
                     .currentLongitude(80.2707)
-                    .status("Active")
+                    .status(STATUS_ACTIVE)
                     .build();
 
             Technician tech3 = Technician.builder()
                     .user(uTech3)
                     .employeeId("TECH-003")
-                    .fullName("David Miller")
+                    .fullName(NAME_DAVID_MILLER)
                     .phone("+91-7654321098")
                     .specialization("Grid Protection Systems, Telecom Diagnostics")
-                    .availability("AVAILABLE")
+                    .availability(STATUS_AVAILABLE)
                     .experience(4)
                     .rating(4.7)
                     .currentJobs(0)
                     .currentLatitude(17.3850)
                     .currentLongitude(78.4867)
-                    .status("Active")
+                    .status(STATUS_ACTIVE)
                     .build();
 
             technicianRepository.saveAll(Arrays.asList(tech1, tech2, tech3));
-            System.out.println("Seeded 3 technicians linked to individual accounts.");
+            log.info("Seeded 3 technicians linked to individual accounts.");
         }
 
 
@@ -252,7 +267,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             customerRepository.saveAll(Arrays.asList(cust1, cust2, cust3));
-            System.out.println("Seeded default customers.");
+            log.info("Seeded default customers.");
         }
 
         
@@ -285,7 +300,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             repairHistoryRepository.saveAll(Arrays.asList(hist1, hist2, hist3));
-            System.out.println("Seeded repair logs for AI historical diagnostic retrieval.");
+            log.info("Seeded repair logs for AI historical diagnostic retrieval.");
         }
     }
 }

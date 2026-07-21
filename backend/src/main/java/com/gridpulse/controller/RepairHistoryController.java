@@ -41,7 +41,7 @@ public class RepairHistoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRepairHistory(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteRepairHistory(@PathVariable Long id) {
         repairHistoryService.deleteRepairHistory(id);
         return ResponseEntity.ok().build();
     }

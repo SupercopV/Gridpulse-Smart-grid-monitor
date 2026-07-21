@@ -6,6 +6,8 @@ import com.gridpulse.dto.DiagnosisDto;
 import com.gridpulse.entity.*;
 import com.gridpulse.repository.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TelemetryService {
+
+    private static final Logger log = LoggerFactory.getLogger(TelemetryService.class);
 
     @Autowired(required = false)
     private DynamoDbClient dynamoDbClient;
@@ -73,9 +77,9 @@ public class TelemetryService {
                         .build();
 
                 dynamoDbClient.putItem(putItemRequest);
-                System.out.println("Telemetry successfully pushed to DynamoDB table [GridPulseTelemetry]");
+                log.info("Telemetry successfully pushed to DynamoDB table [GridPulseTelemetry]");
             } catch (Exception e) {
-                System.err.println("Failed to write to AWS DynamoDB: " + e.getMessage() + ". Saved locally in MySQL.");
+                log.warn("Failed to write to AWS DynamoDB: {}. Saved locally in MySQL.", e.getMessage());
             }
         }
 
@@ -119,9 +123,9 @@ public class TelemetryService {
             return;
         }
 
-        System.out.println("ANOMALY DETECTED on substation: " + substation.getName());
-        System.out.println(String.format("Voltage: %.1fV, Current: %.1fA, Temp: %.1f°C", 
-                telemetry.getVoltage(), telemetry.getCurrent(), telemetry.getTemperature()));
+        log.info("ANOMALY DETECTED on substation: {}", substation.getName());
+        log.info("Voltage: {}V, Current: {}A, Temp: {}°C", 
+                telemetry.getVoltage(), telemetry.getCurrent(), telemetry.getTemperature());
 
         
         String severity = (telemetry.getVoltage() < 120.0 || telemetry.getTemperature() > 85.0 || telemetry.getCurrent() > 40.0) 
@@ -211,19 +215,18 @@ public class TelemetryService {
                 assignedTech.setAvailability("ON_JOB");
                 technicianRepository.save(assignedTech);
                 
-                System.out.println("Ticket auto-assigned to Technician: " + assignedTech.getName());
+                log.info("Ticket auto-assigned to Technician: {}", assignedTech.getName());
             }
 
             ticketRepository.save(ticket);
             NotificationWebSocketHandler.broadcast("TICKET_ASSIGNED", "Ticket auto-assigned to technician " + (ticket.getTechnicianName() != null ? ticket.getTechnicianName() : "Unassigned"), ticket);
-            System.out.println("Automated Repair Ticket created successfully.");
+            log.info("Automated Repair Ticket created successfully.");
 
-            System.out.println("AI Diagnosis generated: " + diagnosis);
+            log.info("AI Diagnosis generated: {}", diagnosis);
             NotificationWebSocketHandler.broadcast("AI_DIAGNOSIS_COMPLETED", "AI fault diagnosis completed for " + substation.getName(), diagnosis);
 
         } catch (Exception e) {
-            System.err.println("Failed to execute AI diagnostics or create repair ticket: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Failed to execute AI diagnostics or create repair ticket", e);
         }
     }
 

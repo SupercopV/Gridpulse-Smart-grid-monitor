@@ -1,19 +1,32 @@
 package com.gridpulse.controller;
 
-import com.gridpulse.entity.*;
-import com.gridpulse.repository.*;
+import com.gridpulse.entity.Alert;
+import com.gridpulse.entity.RepairTicket;
+import com.gridpulse.entity.Substation;
+import com.gridpulse.entity.Technician;
+import com.gridpulse.repository.AlertRepository;
+import com.gridpulse.repository.TicketRepository;
+import com.gridpulse.repository.SubstationRepository;
+import com.gridpulse.repository.TechnicianRepository;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ai")
 @CrossOrigin(origins = "*")
 public class AiChatController {
+
+    private static final Logger log = LoggerFactory.getLogger(AiChatController.class);
 
     @Autowired
     private SubstationRepository substationRepository;
@@ -43,17 +56,15 @@ public class AiChatController {
             return ResponseEntity.badRequest().body(Map.of("response", "Please enter a message."));
         }
 
-        
         List<Substation> allSubs = substationRepository.findAll();
-        List<Substation> faultySubs = allSubs.stream().filter(s -> "FAULT".equals(s.getStatus())).collect(Collectors.toList());
-        List<Alert> activeAlerts = alertRepository.findAll().stream().filter(a -> "ACTIVE".equals(a.getStatus())).collect(Collectors.toList());
-        List<RepairTicket> activeTickets = ticketRepository.findAll().stream().filter(t -> !"COMPLETED".equals(t.getStatus())).collect(Collectors.toList());
+        List<Substation> faultySubs = allSubs.stream().filter(s -> "FAULT".equals(s.getStatus())).toList();
+        List<Alert> activeAlerts = alertRepository.findAll().stream().filter(a -> "ACTIVE".equals(a.getStatus())).toList();
+        List<RepairTicket> activeTickets = ticketRepository.findAll().stream().filter(t -> !"COMPLETED".equals(t.getStatus())).toList();
         List<Technician> freeTechs = technicianRepository.findByAvailability("AVAILABLE");
 
-        
         String aiResponse;
         if (groqApiKey == null || groqApiKey.trim().isEmpty() || groqApiKey.equals("${GROQ_API_KEY}")) {
-            aiResponse = generateLocalHeuristicResponse(userMessage.toLowerCase(), allSubs, faultySubs, activeAlerts, activeTickets, freeTechs);
+            aiResponse = generateLocalHeuristicResponse(userMessage.toLowerCase(), allSubs, faultySubs, activeTickets, freeTechs);
         } else {
             aiResponse = callGroqChat(userMessage, allSubs, faultySubs, activeAlerts, activeTickets, freeTechs);
         }
@@ -64,16 +75,16 @@ public class AiChatController {
     private String callGroqChat(String userPrompt, List<Substation> allSubs, List<Substation> faultySubs,
                                 List<Alert> activeAlerts, List<RepairTicket> activeTickets, List<Technician> freeTechs) {
         try {
-            
-            String systemContext = String.format(
-                    "You are GridPulse AI Assistant, an expert smart-grid control center operator.\n" +
-                    "Here is the CURRENT live state of the grid:\n" +
-                    "- Total Grids/Substations: %d\n" +
-                    "- Substations in FAULT state: %d (Grids: %s)\n" +
-                    "- Active Electrical Alerts: %d (%s)\n" +
-                    "- Open Repair Tickets: %d (%s)\n" +
-                    "- Available Field Technicians: %d (%s)\n\n" +
-                    "Respond to the user prompt concisely. Be helpful, professional, and reference the live state parameters above when answering.",
+            String systemContext = String.format("""
+                    You are GridPulse AI Assistant, an expert smart electrical grid operator and maintenance engineer.
+                    Here is the CURRENT live state of the grid:
+                    - Total Grids/Substations: %d
+                    - Substations in FAULT state: %d (Grids: %s)
+                    - Active Electrical Alerts: %d (%s)
+                    - Open Repair Tickets: %d (%s)
+                    - Available Field Technicians: %d (%s)
+
+                    Respond to the user prompt concisely. Be helpful, professional, and reference the live state parameters above when answering.""",
                     allSubs.size(),
                     faultySubs.size(),
                     faultySubs.stream().map(Substation::getName).collect(Collectors.joining(", ")),
@@ -94,17 +105,14 @@ public class AiChatController {
 
             return chatModel.generate(systemContext + "\nUser Question: " + userPrompt);
         } catch (Exception e) {
-            System.err.println("Groq Chat call failed: " + e.getMessage());
-            return generateLocalHeuristicResponse(userPrompt.toLowerCase(), allSubs, faultySubs, activeAlerts, activeTickets, freeTechs);
+            log.warn("Groq Chat call failed: {}", e.getMessage());
+            return generateLocalHeuristicResponse(userPrompt.toLowerCase(), allSubs, faultySubs, activeTickets, freeTechs);
         }
     }
 
     private String generateLocalHeuristicResponse(String prompt, List<Substation> allSubs, List<Substation> faultySubs,
-                                                 List<Alert> activeAlerts, List<RepairTicket> activeTickets, List<Technician> freeTechs) {
-        
-        
+                                                 List<RepairTicket> activeTickets, List<Technician> freeTechs) {
         if (prompt.contains("why did") || prompt.contains("failed") || prompt.contains("fail")) {
-            
             for (Substation sub : allSubs) {
                 String subName = sub.getName().toLowerCase();
                 if (prompt.contains(subName) || prompt.contains(subName.replace(" grid", "")) || prompt.contains("substation")) {
@@ -138,24 +146,22 @@ public class AiChatController {
             return "No grid failure details found for your query. All systems are operating normally.";
         }
 
-        
         if (prompt.contains("summarize") || prompt.contains("faults") || prompt.contains("incidents")) {
             if (activeTickets.isEmpty()) {
                 return "There are no active faults or outages reported on the Indian State Grid today! All grids are functioning perfectly.";
             }
             StringBuilder sb = new StringBuilder();
-            sb.append("### Live Fault Summary:\n");
-            sb.append(String.format("There are currently **%d active fault(s)** requiring maintenance:\n\n", activeTickets.size()));
+            sb.append("### Live Fault Summary:%n");
+            sb.append(String.format("There are currently **%d active fault(s)** requiring maintenance:%n%n", activeTickets.size()));
             for (int i = 0; i < activeTickets.size(); i++) {
                 RepairTicket t = activeTickets.get(i);
-                sb.append(String.format("%d. **%s**: %s (Severity: *%s*). Assigned to: **%s** (ETA: %d Hours).\n",
+                sb.append(String.format("%d. **%s**: %s (Severity: *%s*). Assigned to: **%s** (ETA: %d Hours).%n",
                         i + 1, t.getSubstationName(), t.getProbableFault(), t.getPriority(),
                         t.getTechnicianName() != null ? t.getTechnicianName() : "Unassigned", t.getEtaHours()));
             }
             return sb.toString();
         }
 
-        
         if (prompt.contains("critical") || prompt.contains("show substations") || prompt.contains("grids")) {
             if (faultySubs.isEmpty()) {
                 return "All Indian State Grid substations are currently **HEALTHY** (Green) and stable.";
@@ -164,7 +170,6 @@ public class AiChatController {
             return String.format("The following substations are currently in a **FAULT** state and require attention: %s.", names);
         }
 
-        
         if (prompt.contains("technician") || prompt.contains("free") || prompt.contains("available")) {
             if (freeTechs.isEmpty()) {
                 return "All field technicians are currently dispatched on active repairs (`ON_JOB`). No technicians are free right now.";
@@ -173,27 +178,23 @@ public class AiChatController {
             return "The following technicians are currently **AVAILABLE** for dispatch:\n- " + names;
         }
 
-        
         if (prompt.contains("report") || prompt.contains("generate")) {
             double uptimePercentage = ((double) (allSubs.size() - faultySubs.size()) / allSubs.size()) * 100.0;
-            return String.format("### GridPulse Daily Operations Report\n" +
-                    "- **Grid Uptime**: %.1f%%\n" +
-                    "- **Total State Grids Monitored**: %d\n" +
-                    "- **Healthy Grids**: %d\n" +
-                    "- **Active Outages**: %d\n" +
-                    "- **Open Maintenance Jobs**: %d\n" +
-                    "- **Technicians Available**: %d\n\n" +
-                    "Operational Status: *%s*",
+            return String.format("""
+                    ### GridPulse Daily Operations Report
+                    - **Grid Uptime**: %.1f%%
+                    - **Total State Grids Monitored**: %d
+                    - **Healthy Grids**: %d
+                    - **Active Outages**: %d
+                    - **Open Maintenance Jobs**: %d
+                    - **Technicians Available**: %d
+
+                    Operational Status: *%s*""",
                     uptimePercentage, allSubs.size(), allSubs.size() - faultySubs.size(),
                     faultySubs.size(), activeTickets.size(), freeTechs.size(),
                     faultySubs.isEmpty() ? "Nominal. No actions required." : "Degraded. Critical repairs pending.");
         }
 
-        
-        return String.format("Hello! I am the **GridPulse Intelligent Assistant**. " +
-                "I am monitoring all %d Indian State Grids. Currently, **%d grids** are in a FAULT state. " +
-                "We have **%d free technician(s)** available. " +
-                "Ask me anything about today's faults, reports, or free technicians!",
-                allSubs.size(), faultySubs.size(), freeTechs.size());
+        return "I am GridPulse AI Assistant. Ask me about state grid status, active faults, technician availability, or daily operations reports!";
     }
 }

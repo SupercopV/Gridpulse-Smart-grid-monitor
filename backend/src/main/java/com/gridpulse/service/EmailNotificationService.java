@@ -1,5 +1,7 @@
 package com.gridpulse.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -8,25 +10,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailNotificationService implements NotificationService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailNotificationService.class);
+
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
     @Override
     public void sendCredentials(String email, String phone, String name, String username, String tempPassword) {
-        System.out.println("==================================================");
-        System.out.println("AUTOMATIC CREDENTIAL DELIVERY (EMAIL SIMULATOR)");
-        System.out.println("To: " + email);
-        System.out.println("Subject: Welcome to GridPulse");
-        System.out.println("Body:");
-        System.out.println("Hello " + name + ",");
-        System.out.println("");
-        System.out.println("Your GridPulse account has been created.");
-        System.out.println("Username: " + username);
-        System.out.println("Temporary Password: " + tempPassword);
-        System.out.println("");
-        System.out.println("Please log in and change your password immediately.");
-        System.out.println("Login URL: http://localhost:5173/login");
-        System.out.println("==================================================");
+        log.info("Dispatching user credentials notification to: {}", email);
 
         if (mailSender != null) {
             try {
@@ -41,21 +32,16 @@ public class EmailNotificationService implements NotificationService {
                         "Login URL:\nhttp://localhost:5173/login\n\n" +
                         "Regards,\nGridPulse Administration");
                 mailSender.send(message);
-                System.out.println("Real email successfully dispatched to SMTP host.");
+                log.info("Real email successfully dispatched to SMTP host.");
             } catch (Exception e) {
-                System.err.println("SMTP send failed (running local offline fallback): " + e.getMessage());
+                log.warn("SMTP send failed (running local offline fallback): {}", e.getMessage());
             }
         }
     }
 
     @Override
     public void sendOtp(String email, String name, String otp) {
-        System.out.println("==================================================");
-        System.out.println("OTP DELIVERY (EMAIL SIMULATOR)");
-        System.out.println("To: " + email);
-        System.out.println("Subject: GridPulse Password Reset OTP");
-        System.out.println("Body: Hello " + name + ", your OTP code is: " + otp);
-        System.out.println("==================================================");
+        log.info("Dispatching OTP password reset email to: {}", email);
 
         if (mailSender != null) {
             try {
@@ -67,9 +53,9 @@ public class EmailNotificationService implements NotificationService {
                         "If you did not request a password reset, please ignore this email.\n\n" +
                         "Regards,\nGridPulse Administration");
                 mailSender.send(message);
-                System.out.println("Real OTP email successfully dispatched to SMTP host.");
+                log.info("Real OTP email successfully dispatched to SMTP host.");
             } catch (Exception e) {
-                System.err.println("SMTP OTP send failed: " + e.getMessage());
+                log.warn("SMTP OTP send failed: {}", e.getMessage());
             }
         }
     }

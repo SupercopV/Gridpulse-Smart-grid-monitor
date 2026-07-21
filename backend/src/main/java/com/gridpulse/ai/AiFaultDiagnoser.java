@@ -3,12 +3,17 @@ package com.gridpulse.ai;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gridpulse.dto.DiagnosisDto;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
 public class AiFaultDiagnoser {
+
+    private static final Logger log = LoggerFactory.getLogger(AiFaultDiagnoser.class);
+    private static final String SPEC_GRID_AUTOMATION = "Grid Automation";
 
     @Value("${gridpulse.groq.api-key:}")
     private String groqApiKey;
@@ -24,13 +29,12 @@ public class AiFaultDiagnoser {
     public DiagnosisDto diagnoseFault(Double voltage, Double current, Double temperature, Double frequency, List<String> repairHistory) {
         
         if (groqApiKey == null || groqApiKey.trim().isEmpty() || groqApiKey.equals("${GROQ_API_KEY}")) {
-            System.out.println("Groq API key not configured. Using local heuristic fault diagnosis.");
+            log.info("Groq API key not configured. Using local heuristic fault diagnosis.");
             return generateHeuristicDiagnosis(voltage, current, temperature, frequency, repairHistory);
         }
 
         try {
-            System.out.println("Diagnosing fault using Groq AI (" + groqModel + ") via LangChain4j...");
-            
+            log.info("Diagnosing fault using Groq AI ({}) via LangChain4j...", groqModel);
             
             OpenAiChatModel chatModel = OpenAiChatModel.builder()
                     .apiKey(groqApiKey)
@@ -39,34 +43,33 @@ public class AiFaultDiagnoser {
                     .temperature(0.1)
                     .build();
 
-            
-            String systemInstructions = "You are an electrical grid engineer. Analyze telemetry and repair history to diagnose grid faults. Return response ONLY as JSON.";
-            String userPrompt = String.format(
-                    "Telemetry:\n" +
-                    "Voltage: %.1fV\n" +
-                    "Current: %.1fA\n" +
-                    "Temperature: %.1f°C\n" +
-                    "Frequency: %.1fHz\n\n" +
-                    "Substation Repair History:\n" +
-                    "%s\n\n" +
-                    "Diagnose the fault and return EXACTLY this JSON format (no markdown blocks, no explanation):\n" +
-                    "{\n" +
-                    "  \"probableFault\": \"detailed fault description\",\n" +
-                    "  \"confidenceScore\": 0.0,\n" +
-                    "  \"recommendedRepair\": \"clear recommendation steps\",\n" +
-                    "  \"rootCause\": \"underlying technical root cause\",\n" +
-                    "  \"priority\": \"LOW\" or \"MEDIUM\" or \"HIGH\" or \"CRITICAL\",\n" +
-                    "  \"etaHours\": 4,\n" +
-                    "  \"technicianSpecialization\": \"Cable Repair\" or \"Transformer Specialist\" or \"Grid Automation\"\n" +
-                    "}",
+            String userPrompt = String.format("""
+                    Telemetry:
+                    Voltage: %.1fV
+                    Current: %.1fA
+                    Temperature: %.1f°C
+                    Frequency: %.1fHz
+
+                    Substation Repair History:
+                    %s
+
+                    Diagnose the fault and return EXACTLY this JSON format (no markdown blocks, no explanation):
+                    {
+                      "probableFault": "detailed fault description",
+                      "confidenceScore": 0.0,
+                      "recommendedRepair": "clear recommendation steps",
+                      "rootCause": "underlying technical root cause",
+                      "priority": "LOW" or "MEDIUM" or "HIGH" or "CRITICAL",
+                      "etaHours": 4,
+                      "technicianSpecialization": "Cable Repair" or "Transformer Specialist" or "Grid Automation"
+                    }""",
                     voltage, current, temperature, frequency,
                     repairHistory.isEmpty() ? "No recent repairs recorded." : String.join("\n", repairHistory)
             );
 
             String response = chatModel.generate(userPrompt);
-            System.out.println("AI Raw Response: " + response);
+            log.info("AI Raw Response: {}", response);
 
-            
             String cleanJson = response.trim();
             if (cleanJson.startsWith("```json")) {
                 cleanJson = cleanJson.substring(7);
@@ -79,7 +82,7 @@ public class AiFaultDiagnoser {
             return objectMapper.readValue(cleanJson, DiagnosisDto.class);
 
         } catch (Exception e) {
-            System.err.println("Groq AI Call failed: " + e.getMessage() + ". Falling back to local heuristics.");
+            log.warn("Groq AI Call failed: {}. Falling back to local heuristics.", e.getMessage());
             return generateHeuristicDiagnosis(voltage, current, temperature, frequency, repairHistory);
         }
     }
@@ -91,9 +94,8 @@ public class AiFaultDiagnoser {
         String cause = "System running under normal electrical parameters.";
         String priority = "LOW";
         int eta = 0;
-        String spec = "Grid Automation";
+        String spec = SPEC_GRID_AUTOMATION;
 
-        
         if (temperature > 75.0) {
             fault = "Thermal Overload & Cooling Pump Seizure";
             confidence = 88.0;
@@ -117,7 +119,7 @@ public class AiFaultDiagnoser {
             cause = "Excessive consumer demand spike and load unbalance across phases exceeding safe current limits.";
             priority = "CRITICAL";
             eta = 2;
-            spec = "Grid Automation";
+            spec = SPEC_GRID_AUTOMATION;
         } else if (frequency < 48.0 || frequency > 52.0) {
             fault = "Phase Frequency Synchronisation Error";
             confidence = 90.0;
@@ -125,10 +127,9 @@ public class AiFaultDiagnoser {
             cause = "Generator speed fluctuations and local transformer phase-locked loop (PLL) control loop drift.";
             priority = "MEDIUM";
             eta = 2;
-            spec = "Grid Automation";
+            spec = SPEC_GRID_AUTOMATION;
         }
 
-        
         if (!repairHistory.isEmpty()) {
             for (String hist : repairHistory) {
                 if (hist.toLowerCase().contains("transformer") && fault.contains("Transformer")) {
@@ -151,5 +152,4 @@ public class AiFaultDiagnoser {
                 .technicianSpecialization(spec)
                 .build();
     }
-
 }
