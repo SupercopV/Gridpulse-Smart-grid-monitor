@@ -49,6 +49,10 @@ gridpulse:
     api-key: ${GROQ_API_KEY:}
     model: llama-3.3-70b-versatile
     url: https://api.groq.com/openai/v1
+  seed:
+    admin-password: Admin@123
+    operator-password: Operator@123
+    technician-password: tempPassword123
 
 ---
 spring:
