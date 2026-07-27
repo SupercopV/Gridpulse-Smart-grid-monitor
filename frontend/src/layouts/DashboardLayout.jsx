@@ -78,7 +78,9 @@ const DashboardLayout = () => {
 
   
   useEffect(() => {
-    const wsUrl = `ws://${window.location.hostname}:8080/ws-notifications`;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = import.meta.env.DEV ? `${window.location.hostname}:8080` : window.location.host;
+    const wsUrl = `${protocol}//${host}/ws-notifications`;
     let ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
