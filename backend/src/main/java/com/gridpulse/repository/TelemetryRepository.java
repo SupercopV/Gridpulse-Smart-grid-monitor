@@ -15,4 +15,7 @@ public interface TelemetryRepository extends JpaRepository<Telemetry, Long> {
     
     @Query("SELECT t FROM Telemetry t WHERE t.substationId = :substationId ORDER BY t.timestamp DESC")
     List<Telemetry> findLatestTelemetryBySubstation(@Param("substationId") Long substationId);
+
+    @Query("SELECT t FROM Telemetry t WHERE t.id IN (SELECT MAX(t2.id) FROM Telemetry t2 GROUP BY t2.substationId)")
+    List<Telemetry> findLatestTelemetryForAllSubstations();
 }

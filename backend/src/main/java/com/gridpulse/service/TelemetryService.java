@@ -243,12 +243,16 @@ public class TelemetryService {
 
     public List<Telemetry> getAllLiveTelemetry() {
         List<Substation> substations = substationRepository.findAll();
-        List<Telemetry> liveData = new ArrayList<>();
+        List<Telemetry> latestTelemetry = telemetryRepository.findLatestTelemetryForAllSubstations();
         
+        Map<Long, Telemetry> telemetryMap = latestTelemetry.stream()
+                .collect(Collectors.toMap(Telemetry::getSubstationId, t -> t, (t1, t2) -> t1));
+                
+        List<Telemetry> liveData = new ArrayList<>();
         for (Substation sub : substations) {
-            List<Telemetry> latestList = telemetryRepository.findLatestTelemetryBySubstation(sub.getId());
-            if (!latestList.isEmpty()) {
-                liveData.add(latestList.get(0));
+            Telemetry t = telemetryMap.get(sub.getId());
+            if (t != null) {
+                liveData.add(t);
             } else {
                 liveData.add(Telemetry.builder()
                         .substationId(sub.getId())
