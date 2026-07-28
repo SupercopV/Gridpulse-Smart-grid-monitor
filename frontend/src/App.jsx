@@ -3,14 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 
 const getBasename = () => {
-  if (import.meta.env.DEV) {
-    return "/";
-  }
-  const path = window.location.pathname;
-  if (path.toLowerCase().startsWith("/gridpulse")) {
-    return "/GridPulse";
-  }
-  return "/";
+  return import.meta.env.DEV ? "/" : "/GridPulse";
 };
 
 function App() {
