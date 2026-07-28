@@ -1,7 +1,18 @@
 import axios from "axios";
 
+const getBaseURL = () => {
+  if (import.meta.env.DEV) {
+    return "http://localhost:8080/api";
+  }
+  const path = window.location.pathname;
+  if (path.toLowerCase().startsWith("/gridpulse")) {
+    return "/GridPulse/api";
+  }
+  return "/api";
+};
+
 const API = axios.create({
-  baseURL: import.meta.env.DEV ? "http://localhost:8080/api" : "/api",
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },
