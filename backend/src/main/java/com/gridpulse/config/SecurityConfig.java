@@ -69,13 +69,15 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                
-                .requestMatchers("/api/telemetry/**").permitAll()
-                .requestMatchers("/api/substations/**").permitAll() 
-                .requestMatchers("/api/alerts/**").permitAll()
-                .requestMatchers("/api/tickets/**").permitAll()
-                .requestMatchers("/api/technicians/**").permitAll()
-                .requestMatchers("/api/customers/**").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/favicon.ico",
+                    "/favicon.svg",
+                    "/icons.svg",
+                    "/assets/**",
+                    "/error"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
 
@@ -83,6 +85,19 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers(
+            "/",
+            "/index.html",
+            "/favicon.ico",
+            "/favicon.svg",
+            "/icons.svg",
+            "/assets/**",
+            "/error"
+        );
     }
 
     @Bean
